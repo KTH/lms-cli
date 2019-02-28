@@ -1,6 +1,7 @@
 require('dotenv').config()
 const inquirer = require('inquirer')
 const rp = require('request-promise')
+const chalk = require('chalk')
 
 async function getBuilds (app) {
   const auth = `Basic ${Buffer.from(process.env.BUILD_USERNAME + ':' + process.env.BUILD_TOKEN).toString('base64')}`
@@ -58,12 +59,18 @@ async function start () {
   const builds = await getBuilds('lms-export-results')
   const active = await getVersion('https://api.kth.se/api/lms-export-results/_about')
   const stage = await getVersion('https://api-r.referens.sys.kth.se/api/lms-export-results/_about')
+  const minRelevant = Math.min(
+    active.split('.')[2].split('_')[0],
+    stage.split('.')[2].split('_')[0]
+  )
 
-  const info = builds.map(b => {
+  const info = builds.filter(b => b.id >= minRelevant - 3).map(b => {
     const short = b.commit.slice(0, 7)
+
 
     return {
       id: b.id,
+      result: b.result,
       commit: short,
       branch: b.branch,
       active: active.indexOf(b.id + '_' + short) !== -1,
@@ -71,9 +78,23 @@ async function start () {
     }
   })
 
-  console.log(info.map(i =>
-    `${i.id}: ${i.active ? '[ ACTIVE ]' : ''} ${i.stage ? '[ STAGE ]' : ''}`
-  ).join('\n'))
+  function format (result, message) {
+    switch (result) {
+      case 'SUCCESS': return chalk.green(message)
+      case 'FAILURE': return chalk.red(message)
+      case 'ABORTED': return chalk.gray(message)
+      default: return message + `(${result})`
+    }
+  }
+
+  console.log(info.map(i => [
+    format(i.result, `#${i.id}`),
+    ' - ',
+    i.active ? chalk.bgMagenta('DEPLOYED IN ACTIVE') : '',
+    i.stage ? chalk.bgCyan('DEPLOYED IN STAGE') : '',
+    '   ',
+    i.branch
+  ].join('')).join('\n'))
 }
 
 start()
