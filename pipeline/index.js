@@ -40,13 +40,40 @@ async function getBuilds (app) {
     }))
 }
 
+async function getVersion(url) {
+  const html = await rp({
+    method: 'GET',
+    followRedirect: false,
+    url
+  })
+
+  const line = html
+    .split('\n')
+    .filter(line => line.indexOf('version.dockerVersion:') !== -1)[0]
+
+  return line.split(':')[1]
+}
 
 async function start () {
   const builds = await getBuilds('lms-export-results')
+  const active = await getVersion('https://api.kth.se/api/lms-export-results/_about')
+  const stage = await getVersion('https://api-r.referens.sys.kth.se/api/lms-export-results/_about')
 
+  const info = builds.map(b => {
+    const short = b.commit.slice(0, 7)
 
-  console.log(builds)
-  console.log(builds.length)
+    return {
+      id: b.id,
+      commit: short,
+      branch: b.branch,
+      active: active.indexOf(b.id + '_' + short) !== -1,
+      stage: stage.indexOf(b.id + '_' + short) !== -1
+    }
+  })
+
+  console.log(info.map(i =>
+    `${i.id}: ${i.active ? '[ ACTIVE ]' : ''} ${i.stage ? '[ STAGE ]' : ''}`
+  ).join('\n'))
 }
 
 start()
