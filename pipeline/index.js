@@ -42,23 +42,64 @@ async function getBuilds (app) {
 }
 
 async function getVersion(url) {
-  const html = await rp({
-    method: 'GET',
-    followRedirect: false,
-    url
-  })
+  try {
+    const html = await rp({
+      method: 'GET',
+      followRedirect: false,
+      url
+    })
 
-  const line = html
-    .split('\n')
-    .filter(line => line.indexOf('version.dockerVersion:') !== -1)[0]
+    const line = html
+      .split('\n')
+      .filter(line => line.indexOf('version.dockerVersion:') !== -1)[0]
 
-  return line.split(':')[1]
+    return line.split(':')[1]
+  } catch (e) {
+    return undefined
+  }
 }
 
 async function start () {
-  const builds = await getBuilds('lms-export-results')
-  const active = await getVersion('https://api.kth.se/api/lms-export-results/_about')
-  const stage = await getVersion('https://api-r.referens.sys.kth.se/api/lms-export-results/_about')
+  const { project } = await inquirer.prompt({
+    name: 'project',
+    message: 'Which project do you want to look at?',
+    type: 'list',
+    choices: [
+      'lms-sync-users',
+      'lms-sync-courses',
+      'lms-export-results',
+      'lms-web'
+    ]
+  })
+
+  const urls = {
+    'lms-export-results': [
+      'lms-export-results',
+      'https://api.kth.se/api/lms-export-results/_about',
+      'https://api-r.referens.sys.kth.se/api/lms-export-results/_about'
+    ],
+    'lms-sync-users': [
+      'lms-sync-users',
+      'https://api.kth.se/api/lms-sync-users/_about',
+      'https://api-r.referens.sys.kth.se/api/lms-sync-users/_about'
+    ],
+    'lms-sync-courses': [
+      'lms-sync-courses',
+      'https://api.kth.se/api/lms-sync-courses/_about',
+      'https://api-r.referens.sys.kth.se/api/lms-sync-courses/_about'
+    ],
+    'lms-web': [
+      'lms-web',
+      'https://app.kth.se/app/lms-web/_about',
+      'https://app-r.referens.sys.kth.se/app/lms-web/_about'
+    ]
+  }
+
+  const [jobName, activeUrl, stageUrl] = urls[project]
+
+  const builds = await getBuilds(jobName)
+  const active = (await getVersion(activeUrl)) || '0.0.1000_x'
+  const stage = (await getVersion(stageUrl)) || '0.0.1000_x'
   const minRelevant = Math.min(
     active.split('.')[2].split('_')[0],
     stage.split('.')[2].split('_')[0]
@@ -88,7 +129,7 @@ async function start () {
   }
 
   console.log(info.map(i => [
-    format(i.result, `#${i.id}`),
+    format(i.result, `#${i.id}`) + ' ' + i.commit,
     ' - ',
     i.active ? chalk.bgMagenta('DEPLOYED IN ACTIVE') : '',
     i.stage ? chalk.bgCyan('DEPLOYED IN STAGE') : '',
