@@ -59,6 +59,15 @@ async function getVersion(url) {
   }
 }
 
+async function getImageVersion(repo, commit) {
+  const content = await rp({
+    method: 'GET',
+    url: `https://raw.githubusercontent.com/${repo}/${commit}/docker.conf`,
+  })
+
+  return require('dotenv').parse(Buffer.from(content)).IMAGE_VERSION
+}
+
 async function start () {
   const { project } = await inquirer.prompt({
     name: 'project',
@@ -76,48 +85,57 @@ async function start () {
     'lms-export-results': [
       'lms-export-results',
       'https://api.kth.se/api/lms-export-results/_about',
-      'https://api-r.referens.sys.kth.se/api/lms-export-results/_about'
+      'https://api-r.referens.sys.kth.se/api/lms-export-results/_about',
+      'kth/lms-export-results'
     ],
     'lms-sync-users': [
       'lms-sync-users',
       'https://api.kth.se/api/lms-sync-users/_about',
-      'https://api-r.referens.sys.kth.se/api/lms-sync-users/_about'
+      'https://api-r.referens.sys.kth.se/api/lms-sync-users/_about',
+      'kth/lms-sync-users'
     ],
     'lms-sync-courses': [
       'lms-sync-courses',
       'https://api.kth.se/api/lms-sync-courses/_about',
-      'https://api-r.referens.sys.kth.se/api/lms-sync-courses/_about'
+      'https://api-r.referens.sys.kth.se/api/lms-sync-courses/_about',
+      'kth/lms-sync-courses'
     ],
     'lms-web': [
       'lms-web',
       'https://app.kth.se/app/lms-web/_about',
-      'https://app-r.referens.sys.kth.se/app/lms-web/_about'
+      'https://app-r.referens.sys.kth.se/app/lms-web/_about',
+      'kth/lms-web'
     ]
   }
 
-  const [jobName, activeUrl, stageUrl] = urls[project]
+  const [jobName, activeUrl, stageUrl, repoUrl] = urls[project]
 
   const builds = await getBuilds(jobName)
   const active = (await getVersion(activeUrl)) || '0.0.1000_x'
   const stage = (await getVersion(stageUrl)) || '0.0.1000_x'
+
   const minRelevant = Math.min(
     active.split('.')[2].split('_')[0],
     stage.split('.')[2].split('_')[0]
   )
 
-  const info = builds.filter(b => b.id >= minRelevant - 3).map(b => {
-    const short = b.commit.slice(0, 7)
+  const infoP = builds
+    .filter(b => b.id >= minRelevant - 3)
+    .map(async b => {
+      const short = b.commit.slice(0, 7)
 
+      return {
+        id: b.id,
+        imageVersion: await getImageVersion(repoUrl, b.commit),
+        result: b.result,
+        commit: short,
+        branch: b.branch,
+        active: active.indexOf(b.id + '_' + short) !== -1,
+        stage: stage.indexOf(b.id + '_' + short) !== -1
+      }
+    })
 
-    return {
-      id: b.id,
-      result: b.result,
-      commit: short,
-      branch: b.branch,
-      active: active.indexOf(b.id + '_' + short) !== -1,
-      stage: stage.indexOf(b.id + '_' + short) !== -1
-    }
-  })
+  const info = await Promise.all(infoP)
 
   function format (result, message) {
     switch (result) {
@@ -130,6 +148,8 @@ async function start () {
 
   console.log(info.map(i => [
     format(i.result, `#${i.id}`) + ' ' + i.commit,
+    ' - ',
+    i.imageVersion + '.' + i.id + '_' + i.commit,
     ' - ',
     i.active ? chalk.bgMagenta('DEPLOYED IN ACTIVE') : '',
     i.stage ? chalk.bgCyan('DEPLOYED IN STAGE') : '',
