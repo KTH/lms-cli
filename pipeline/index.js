@@ -41,7 +41,7 @@ async function getBuilds (app) {
     }))
 }
 
-async function getVersion(url) {
+async function getVersion (url) {
   try {
     const html = await rp({
       method: 'GET',
@@ -59,10 +59,10 @@ async function getVersion(url) {
   }
 }
 
-async function getImageVersion(repo, commit) {
+async function getImageVersion (repo, commit) {
   const content = await rp({
     method: 'GET',
-    url: `https://raw.githubusercontent.com/${repo}/${commit}/docker.conf`,
+    url: `https://raw.githubusercontent.com/${repo}/${commit}/docker.conf`
   })
 
   return require('dotenv').parse(Buffer.from(content)).IMAGE_VERSION
