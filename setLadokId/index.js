@@ -14,10 +14,15 @@ async function start () {
     const kthId = enrollment.user.sis_user_id
 
     if (kthId) {
-      const a = await ldap.search(`(ugKthId=${kthId})`)
-      console.log(kthId, a[0].ugLadok3StudentUid)
-    }
+      const [user] = await ldap.search(`(ugKthId=${kthId})`)
+      const ladokId = user.ugLadok3StudentUid
+      console.log(kthId, ladokId)
 
+      await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_id`, 'PUT', {
+        ns: 'se.kth',
+        data: ladokId
+      })
+    }
   }
 
   await ldap.disconnect()
