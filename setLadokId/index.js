@@ -16,7 +16,6 @@ async function start () {
     if (kthId) {
       const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
       const ladokId = user.ugLadok3StudentUid
-      console.log(kthId, ladokId)
 
       await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
         ns: 'se.kth',
