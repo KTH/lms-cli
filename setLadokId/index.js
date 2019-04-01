@@ -14,7 +14,7 @@ async function start () {
     const kthId = enrollment.user.sis_user_id
 
     if (kthId) {
-      const [user] = await ldap.search(`(ugKthId=${kthId})`)
+      const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
       const ladokId = user.ugLadok3StudentUid
       console.log(kthId, ladokId)
 
