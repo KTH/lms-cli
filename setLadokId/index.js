@@ -18,7 +18,7 @@ async function start () {
       const ladokId = user.ugLadok3StudentUid
       console.log(kthId, ladokId)
 
-      await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_id`, 'PUT', {
+      await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
         ns: 'se.kth',
         data: ladokId
       })
