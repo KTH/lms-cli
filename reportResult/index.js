@@ -1,4 +1,4 @@
-require('dotenv').config()
+const { getEnv } = require('../lib/env')
 const path = require('path')
 const fs = require('fs')
 const rp = require('request-promise')
@@ -11,7 +11,7 @@ async function helloLadok () {
   await rp({
     url: 'https://api.test.ladok.se/kataloginformation/anvandare/autentiserad',
     agentOptions: {
-      passphrase: process.env.LADOK_CERTIFICATE_PASSPHRASE,
+      passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE'),
       pfx,
     }
   })
