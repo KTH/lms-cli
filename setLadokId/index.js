@@ -11,13 +11,19 @@ async function start () {
   const sectionId = 'LT1016VT191'
   const section = (await canvas.get(`courses/sis_course_id:${sectionId}/sections/sis_section_id:${sectionId}`)).body
 
-  console.log('- Section in Canvas is', section.name)
+  console.log('- Section and Course in Canvas is', section.name)
 
   const { kurstillfalleUID } = await inquirer.prompt({
     name: 'kurstillfalleUID',
     type: 'input',
-    message: 'Write the Ladok Kurstillfälle for that section',
+    message: 'Write the Ladok Kurstillfälle for that section (and its course)',
     default: section.integration_id || ''
+  })
+
+  await canvas.requestUrl(`/courses/sis_course_id:${sectionId}`, 'PUT', {
+    course: {
+      integration_id: kurstillfalleUID
+    }
   })
 
   await canvas.requestUrl(`/sections/sis_section_id:${sectionId}`, 'PUT', {
