@@ -77,7 +77,8 @@ async function start () {
       'lms-sync-users',
       'lms-sync-courses',
       'lms-export-results',
-      'lms-web'
+      'lms-export-to-ladok',
+      'lms-web',
     ]
   })
 
@@ -87,6 +88,12 @@ async function start () {
       'https://api.kth.se/api/lms-export-results/_about',
       'https://api-r.referens.sys.kth.se/api/lms-export-results/_about',
       'kth/lms-export-results'
+    ],
+    'lms-export-to-ladok': [
+      'lms-export-to-ladok',
+      'https://api.kth.se/api/lms-export-to-ladok/_about',
+      'https://api-r.referens.sys.kth.se/api/lms-export-to-ladok/_about',
+      'kth/lms-export-to-ladok'
     ],
     'lms-sync-users': [
       'lms-sync-users',

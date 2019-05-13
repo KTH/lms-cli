@@ -13,7 +13,7 @@ async function helloLadok () {
     url: 'https://api.test.ladok.se/kataloginformation/anvandare/autentiserad',
     agentOptions: {
       passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE'),
-      pfx,
+      pfx
     }
   })
 
