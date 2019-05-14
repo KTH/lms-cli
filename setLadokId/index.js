@@ -65,25 +65,38 @@ async function start () {
 
   console.log('Ladok user UID > students custom_data')
 
-  await ldap.connect()
+  try {
+    console.log('Set LadokID (obtained from UG) to all users in a canvas course round (section)')
+    console.log()
 
-  for await (const enrollment of canvas.list(`sections/sis_section_id:${sectionId}/enrollments`)) {
-    const kthId = enrollment.user.sis_user_id
+    const sectionId = 'LT1016VT191'
 
-    if (kthId) {
-      const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
-      const ladokId = user.ugLadok3StudentUid
+    await ldap.connect()
 
-      await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
-        ns: 'se.kth',
-        data: ladokId
-      })
+    for await (const enrollment of canvas.list(`sections/sis_section_id:${sectionId}/enrollments`)) {
+      const kthId = enrollment.user.sis_user_id
 
-      console.log(`- Done for ${kthId}`)
+      if (kthId) {
+        const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
+        const ladokId = user.ugLadok3StudentUid
+
+
+        await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
+          ns: 'se.kth',
+          data: ladokId
+        })
+        console.log(`- Done for ${kthId}`)
+      }
     }
-  }
 
-  await ldap.disconnect()
+  } catch (e) {
+    console.log("Error:", e)
+  }
+  try {
+    await ldap.disconnect()
+  } catch (e) {
+    console.log("Error:", e)
+  }
 }
 
 start()
