@@ -80,11 +80,7 @@ async function start () {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
         const ladokId = user.ugLadok3StudentUid
 
-
-        await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
-          ns: 'se.kth',
-          data: ladokId
-        })
+        await setUserLadokId(kthId, ladokId)
         console.log(`- Done for ${kthId}`)
       }
     }
@@ -97,6 +93,13 @@ async function start () {
   } catch (e) {
     console.log("Error:", e)
   }
+}
+
+async function setUserLadokId(kthId, ladokId) {
+  await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
+    ns: 'se.kth',
+    data: ladokId
+  })
 }
 
 start()
