@@ -95,11 +95,29 @@ async function start () {
   }
 }
 
+/**
+ * Update canvas integration_id of a user specified by kthid.
+ *
+ * Get login(s) with sis_user_id matching kthId and set integration_id of them to ladokId.
+ * There will normally be exactly one matching login, but canvas handles it as an array.
+ */
 async function setUserLadokId(kthId, ladokId) {
-  await canvas.requestUrl(`/users/sis_user_id:${kthId}/custom_data/ladok_uid`, 'PUT', {
-    ns: 'se.kth',
-    data: ladokId
-  })
+  var done = 0;
+  const logins = await canvas.requestUrl(`/users/sis_user_id:${kthId}/logins`, 'GET');
+  for (const login of logins.body) {
+    if (login.sis_user_id === kthId) {
+      await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
+        'login': {
+          'integration_id': ladokId
+        },
+      })
+      done += 1
+    } else {
+      console.log(`${login.sis_user_id} != ${kthId}`)
+    }
+  }
+  console.log(`==> Updated ${done} login(s) for ${kthId}`)
 }
 
 start()
+// ... or test: setUserLadokId('u1famwov', '000-00000-00-0000000-00-00000')
