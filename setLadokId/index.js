@@ -121,14 +121,13 @@ async function setupAssignment (assignment, course) {
   if (newId !== assignment.integration_id) {
     assignment = (await canvas.requestUrl(`/courses/${course.id}/assignments/${assignment.id}`, 'PUT', {
       assignment: {
-        integration_id: newId 
+        integration_id: newId
       }
     })).body
   }
 
   return assignment
 }
-
 
 /**
  * Update canvas integration_id of a user specified by kthid.
@@ -137,16 +136,15 @@ async function setupAssignment (assignment, course) {
  * There will normally be exactly one matching login, but canvas handles it as an array.
  */
 async function setupUser (kthId, ladokId) {
-  let done = 0;
+  let done = 0
   for await (const login of canvas.list(`/users/sis_user_id:${kthId}/logins`)) {
-      console.log('login', login)
     if (login.sis_user_id === kthId) {
-        console.log('update the login')
-      await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
+        const body = {
         'login': {
           'integration_id': ladokId
-        },
-      })
+        }
+      }
+      await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', body)
       done += 1
     } else {
       console.log(`${login.sis_user_id} != ${kthId}`)
@@ -154,7 +152,6 @@ async function setupUser (kthId, ladokId) {
   }
   console.log(`==> Updated ${done} login(s) for ${kthId}`)
 }
-
 
 async function start () {
   console.log('This app will set up the Ladok data to a course.')
@@ -182,27 +179,28 @@ async function start () {
   try {
     await ldap.connect()
 
-    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`)) {
+    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`,{type:'StudentEnrollment' })) {
       const kthId = enrollment.user.sis_user_id
 
-        console.group(`handling user ${kthId}`)
       if (kthId) {
-          console.log('search in ldap')
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
         const ladokId = user.ugLadok3StudentUid
-        console.log('setup user')
-        await setupUser(kthId, ladokId)
-        console.groupEnd()
+          if(ladokId){
+            
+            await setupUser(kthId, ladokId)
+          }else{
+            console.error('No ladok id found for the user ', user )
+              process.exit()
+          }
       }
     }
-
   } catch (e) {
-    console.log("Error:", e)
+    console.log('Error:', e)
   }
   try {
     await ldap.disconnect()
   } catch (e) {
-    console.log("Error:", e)
+    console.log('Error:', e)
   }
 }
 
