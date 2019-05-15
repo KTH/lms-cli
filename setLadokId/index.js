@@ -51,6 +51,23 @@ async function chooseSection (course) {
   return section
 }
 
+async function chooseAssignment (course) {
+  const assignments = await canvas.list(`/courses/sis_course_id:${course.id}/assignments`).toArray()
+
+  const { assignment } = await inquirer.prompt({
+    name: 'assignment',
+    type: 'rawlist',
+    message: 'Choose an assignment',
+    choices: assignments.map(a => ({
+      value: a,
+      name: a.name,
+      short: a.id
+    }))
+  })
+
+  return assignment
+}
+
 async function setupCourse (course) {
   const { newId } = await inquirer.prompt({
     name: 'newId',
@@ -89,6 +106,25 @@ async function setupSection (course, section) {
   return section
 }
 
+async function setupAssignment (assignment) {
+  const { newId } = await inquirer.prompt({
+    name: 'newId',
+    type: 'input',
+    message: 'Write the Ladok Modul UID or Moment UID for that assignment',
+    default: assignment.integration_id
+  })
+
+  if (newId !== assignment.integration_id) {
+    assignment = (await canvas.requestUrl(`/courses/sis_course_id:${courseId}/assignments/${assignment.id}`, 'PUT', {
+      assignment: {
+        integration_id: modulUID
+      }
+    })).body
+  }
+
+  return assignment
+}
+
 async function start () {
   console.log('This app will set up the Ladok data to a course.')
   console.log()
@@ -99,34 +135,8 @@ async function start () {
   course = await setupCourse(course)
   section = await setupSection(course, section)
 
-  const assignments = []
-  for await (const assignment of canvas.list(`/courses/sis_course_id:${courseId}/assignments`)) {
-    assignments.push(assignment)
-  }
-
-  const { assignment } = await inquirer.prompt({
-    name: 'assignment',
-    type: 'rawlist',
-    message: 'Choose an assignment',
-    choices: assignments.map(a => ({
-      value: a,
-      name: a.name,
-      short: a.id
-    }))
-  })
-
-  const { modulUID } = await inquirer.prompt({
-    name: 'modulUID',
-    type: 'input',
-    message: 'Write the Ladok Modul UID or Moment UID for that assignment',
-    default: assignment.integration_id
-  })
-
-  await canvas.requestUrl(`/courses/sis_course_id:${courseId}/assignments/${assignment.id}`, 'PUT', {
-    assignment: {
-      integration_id: modulUID
-    }
-  })
+  let assignment = await chooseAssignment(section)
+  assignment = await setupAssignment(assignment)
 
   console.log('Ladok user UID > students custom_data')
 
