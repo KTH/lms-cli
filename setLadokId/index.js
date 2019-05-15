@@ -110,7 +110,7 @@ async function setupSection (course, section) {
   return section
 }
 
-async function setupAssignment (assignment) {
+async function setupAssignment (assignment, course) {
   const { newId } = await inquirer.prompt({
     name: 'newId',
     type: 'input',
@@ -121,7 +121,7 @@ async function setupAssignment (assignment) {
   if (newId !== assignment.integration_id) {
     assignment = (await canvas.requestUrl(`/courses/${course.id}/assignments/${assignment.id}`, 'PUT', {
       assignment: {
-        integration_id: modulUID
+        integration_id: newId 
       }
     })).body
   }
@@ -165,7 +165,7 @@ async function start () {
   section = await setupSection(course, section)
 
   let assignment = await chooseAssignment(course)
-  assignment = await setupAssignment(assignment)
+  assignment = await setupAssignment(assignment, course)
 
   const { setupUsers } = await inquirer.prompt({
     name: 'setupUsers',
@@ -202,5 +202,5 @@ async function start () {
   }
 }
 
-start()
+start().catch(e => console.error(e))
 // ... or test: setUserLadokId('u1famwov', '000-00000-00-0000000-00-00000')
