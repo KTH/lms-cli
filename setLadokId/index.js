@@ -139,7 +139,9 @@ async function setupAssignment (assignment, course) {
 async function setupUser (kthId, ladokId) {
   let done = 0;
   for await (const login of canvas.list(`/users/sis_user_id:${kthId}/logins`)) {
+      console.log('login', login)
     if (login.sis_user_id === kthId) {
+        console.log('update the login')
       await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
         'login': {
           'integration_id': ladokId
@@ -183,12 +185,14 @@ async function start () {
     for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`)) {
       const kthId = enrollment.user.sis_user_id
 
+        console.group(`handling user ${kthId}`)
       if (kthId) {
+          console.log('search in ldap')
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
         const ladokId = user.ugLadok3StudentUid
-
+        console.log('setup user')
         await setupUser(kthId, ladokId)
-        console.log(`- Done for ${kthId}`)
+        console.groupEnd()
       }
     }
 
