@@ -137,9 +137,8 @@ async function setupAssignment (assignment) {
  * There will normally be exactly one matching login, but canvas handles it as an array.
  */
 async function setupUser (kthId, ladokId) {
-  var done = 0;
-  const logins = await canvas.requestUrl(`/users/sis_user_id:${kthId}/logins`, 'GET');
-  for (const login of logins.body) {
+  let done = 0;
+  for await (const login of canvas.list(`/users/sis_user_id:${kthId}/logins`)) {
     if (login.sis_user_id === kthId) {
       await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
         'login': {
@@ -168,13 +167,13 @@ async function start () {
   let assignment = await chooseAssignment(course)
   assignment = await setupAssignment(assignment)
 
-  await inquirer.prompt({
-    name: 'continue',
+  const { setupUsers } = await inquirer.prompt({
+    name: 'setupUsers',
     type: 'confirm',
     message: 'Do you want to set the Ladok ID to all the users in the section?'
   })
 
-  if (!continue) {
+  if (!setupUsers) {
     return
   }
 
@@ -188,7 +187,7 @@ async function start () {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
         const ladokId = user.ugLadok3StudentUid
 
-        await setUserLadokId(kthId, ladokId)
+        await setupUser(kthId, ladokId)
         console.log(`- Done for ${kthId}`)
       }
     }
