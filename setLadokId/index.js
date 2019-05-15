@@ -39,30 +39,34 @@ async function chooseSection (course) {
 
   const { section } = await inquirer.prompt({
     name: 'section',
-    type: 'rawlist',
+    type: 'list',
     message: 'Choose a section',
-    choices: sections.map(s => ({
-      value: s,
-      name: `${s.sis_section_id} - ${s.name}`,
-      short: s.name
-    }))
+    choices: sections
+      .map(s => ({
+        value: s,
+        name: `${s.sis_section_id} - ${s.name}`,
+        short: s.name
+      }))
+      .concat(new inquirer.Separator())
   })
 
   return section
 }
 
 async function chooseAssignment (course) {
-  const assignments = await canvas.list(`/courses/sis_course_id:${course.id}/assignments`).toArray()
+  const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const { assignment } = await inquirer.prompt({
     name: 'assignment',
-    type: 'rawlist',
+    type: 'list',
     message: 'Choose an assignment',
-    choices: assignments.map(a => ({
-      value: a,
-      name: a.name,
-      short: a.id
-    }))
+    choices: assignments
+      .map(a => ({
+        value: a,
+        name: a.name,
+        short: a.id
+      }))
+      .concat(new inquirer.Separator())
   })
 
   return assignment
@@ -115,7 +119,7 @@ async function setupAssignment (assignment) {
   })
 
   if (newId !== assignment.integration_id) {
-    assignment = (await canvas.requestUrl(`/courses/sis_course_id:${courseId}/assignments/${assignment.id}`, 'PUT', {
+    assignment = (await canvas.requestUrl(`/courses/${course.id}/assignments/${assignment.id}`, 'PUT', {
       assignment: {
         integration_id: modulUID
       }
@@ -124,6 +128,32 @@ async function setupAssignment (assignment) {
 
   return assignment
 }
+
+
+/**
+ * Update canvas integration_id of a user specified by kthid.
+ *
+ * Get login(s) with sis_user_id matching kthId and set integration_id of them to ladokId.
+ * There will normally be exactly one matching login, but canvas handles it as an array.
+ */
+async function setupUser (kthId, ladokId) {
+  var done = 0;
+  const logins = await canvas.requestUrl(`/users/sis_user_id:${kthId}/logins`, 'GET');
+  for (const login of logins.body) {
+    if (login.sis_user_id === kthId) {
+      await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
+        'login': {
+          'integration_id': ladokId
+        },
+      })
+      done += 1
+    } else {
+      console.log(`${login.sis_user_id} != ${kthId}`)
+    }
+  }
+  console.log(`==> Updated ${done} login(s) for ${kthId}`)
+}
+
 
 async function start () {
   console.log('This app will set up the Ladok data to a course.')
@@ -135,20 +165,23 @@ async function start () {
   course = await setupCourse(course)
   section = await setupSection(course, section)
 
-  let assignment = await chooseAssignment(section)
+  let assignment = await chooseAssignment(course)
   assignment = await setupAssignment(assignment)
 
-  console.log('Ladok user UID > students custom_data')
+  await inquirer.prompt({
+    name: 'continue',
+    type: 'confirm',
+    message: 'Do you want to set the Ladok ID to all the users in the section?'
+  })
+
+  if (!continue) {
+    return
+  }
 
   try {
-    console.log('Set LadokID (obtained from UG) to all users in a canvas course round (section)')
-    console.log()
-
-    const sectionId = 'LT1016VT191'
-
     await ldap.connect()
 
-    for await (const enrollment of canvas.list(`sections/sis_section_id:${sectionId}/enrollments`)) {
+    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`)) {
       const kthId = enrollment.user.sis_user_id
 
       if (kthId) {
@@ -168,30 +201,6 @@ async function start () {
   } catch (e) {
     console.log("Error:", e)
   }
-}
-
-/**
- * Update canvas integration_id of a user specified by kthid.
- *
- * Get login(s) with sis_user_id matching kthId and set integration_id of them to ladokId.
- * There will normally be exactly one matching login, but canvas handles it as an array.
- */
-async function setUserLadokId(kthId, ladokId) {
-  var done = 0;
-  const logins = await canvas.requestUrl(`/users/sis_user_id:${kthId}/logins`, 'GET');
-  for (const login of logins.body) {
-    if (login.sis_user_id === kthId) {
-      await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', {
-        'login': {
-          'integration_id': ladokId
-        },
-      })
-      done += 1
-    } else {
-      console.log(`${login.sis_user_id} != ${kthId}`)
-    }
-  }
-  console.log(`==> Updated ${done} login(s) for ${kthId}`)
 }
 
 start()
