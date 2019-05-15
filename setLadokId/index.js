@@ -139,7 +139,7 @@ async function setupUser (kthId, ladokId) {
   let done = 0
   for await (const login of canvas.list(`/users/sis_user_id:${kthId}/logins`)) {
     if (login.sis_user_id === kthId) {
-        const body = {
+      const body = {
         'login': {
           'integration_id': ladokId
         }
@@ -164,7 +164,7 @@ async function start () {
   section = await setupSection(course, section)
 
   let assignment = await chooseAssignment(course)
-  assignment = await setupAssignment(assignment, course)
+  await setupAssignment(assignment, course)
 
   const { setupUsers } = await inquirer.prompt({
     name: 'setupUsers',
@@ -179,19 +179,18 @@ async function start () {
   try {
     await ldap.connect()
 
-    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`,{type:'StudentEnrollment' })) {
+    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
       const kthId = enrollment.user.sis_user_id
 
       if (kthId) {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
         const ladokId = user.ugLadok3StudentUid
-          if(ladokId){
-            
-            await setupUser(kthId, ladokId)
-          }else{
-            console.error('No ladok id found for the user ', user )
-              process.exit()
-          }
+        if (ladokId) {
+          await setupUser(kthId, ladokId)
+        } else {
+          console.error('No ladok id found for the user ', user)
+          process.exit()
+        }
       }
     }
   } catch (e) {

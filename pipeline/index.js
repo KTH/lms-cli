@@ -78,7 +78,7 @@ async function start () {
       'lms-sync-courses',
       'lms-export-results',
       'lms-export-to-ladok',
-      'lms-web',
+      'lms-web'
     ]
   })
 
