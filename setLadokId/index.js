@@ -51,33 +51,53 @@ async function chooseSection (course) {
   return section
 }
 
+async function setupCourse (course) {
+  const { newId } = await inquirer.prompt({
+    name: 'newId',
+    type: 'input',
+    message: 'Write the Ladok Kurstillfälle UID for this course',
+    default: course.integration_id
+  })
+
+  if (newId !== course.integration_id) {
+    course = (await canvas.requestUrl(`/courses/${course.id}`, 'PUT', {
+      course: {
+        integration_id: newId
+      }
+    })).body
+  }
+
+  return course
+}
+
+async function setupSection (course, section) {
+  const { newId } = await inquirer.prompt({
+    name: 'newId',
+    type: 'input',
+    message: 'Write the Ladok Kurstillfälle UID for this section',
+    default: section.integration_id || course.integration_id
+  })
+
+  if (newId !== section.integration_id) {
+    section = (await canvas.requestUrl(`/sections/${section.id}`, 'PUT', {
+      course_section: {
+        integration_id: newId
+      }
+    })).body
+  }
+
+  return section
+}
+
 async function start () {
   console.log('This app will set up the Ladok data to a course.')
   console.log()
 
-  const course = await chooseCourse()
-  const section = await chooseSection(course)
+  let course = await chooseCourse()
+  let section = await chooseSection(course)
 
-  const { kurstillfalleUID } = await inquirer.prompt({
-    name: 'kurstillfalleUID',
-    type: 'input',
-    message: 'Write the Ladok Kurstillfälle for that section (and its course)',
-    default: section.integration_id || ''
-  })
-
-  await canvas.requestUrl(`/courses/sis_course_id:${courseId}`, 'PUT', {
-    course: {
-      integration_id: kurstillfalleUID
-    }
-  })
-
-  await canvas.requestUrl(`/sections/sis_section_id:${sectionId}`, 'PUT', {
-    course_section: {
-      integration_id: kurstillfalleUID
-    }
-  })
-
-  console.log('Ladok moment UID > Assignment')
+  course = await setupCourse(course)
+  section = await setupSection(course, section)
 
   const assignments = []
   for await (const assignment of canvas.list(`/courses/sis_course_id:${courseId}/assignments`)) {
