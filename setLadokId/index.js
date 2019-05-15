@@ -8,7 +8,13 @@ async function start () {
   console.log()
 
   console.log('Ladok kurstilfälle UID > Section')
-  const sectionId = 'LT1016VT191'
+  const { sectionId } = await inquirer.prompt({
+    name: 'sectionId',
+    type: 'input',
+    message: 'Write a canvas sis_section_id',
+    default: 'LT1016VT191'
+  })
+
   const section = (await canvas.get(`courses/sis_course_id:${sectionId}/sections/sis_section_id:${sectionId}`)).body
 
   console.log('- Section and Course in Canvas is', section.name)
