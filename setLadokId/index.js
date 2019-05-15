@@ -3,9 +3,42 @@ const inquirer = require('inquirer')
 const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN, { log: console.log })
 const ldap = require('../lib/ldap')
 
+async function chooseCourse () {
+  let course
+
+  while (!course) {
+    const { courseId } = await inquirer.prompt({
+      name: 'courseId',
+      type: 'input',
+      message: 'Write the canvas course ID (you can prefix "sis_course_id:" to use the SIS ID)',
+      default: 'sis_course_id:LT1016VT191'
+    })
+
+    try {
+      course = (await canvas.get(`courses/${courseId}`)).body
+
+      const { ok } = await inquirer.prompt({
+        name: 'ok',
+        type: 'confirm',
+        message: `Chosen course is "${course.name}". Is correct?`
+      })
+
+      if (!ok) {
+        course = null
+      }
+    } catch (e) {
+      console.error('X')
+    }
+  }
+
+  return course
+}
+
 async function start () {
-  console.log('Set Ladok UIDs to all Canvas objects')
+  console.log('This app will set up the Ladok data to a course.')
   console.log()
+
+  const course = await chooseCourse()
 
   console.log('Ladok kurstilfälle UID > Section')
 
@@ -55,7 +88,7 @@ async function start () {
 
   const { assignment } = await inquirer.prompt({
     name: 'assignment',
-    type: 'list',
+    type: 'rawlist',
     message: 'Choose an assignment',
     choices: assignments.map(a => ({
       value: a,
