@@ -8,14 +8,22 @@ async function start () {
   console.log()
 
   console.log('Ladok kurstilfälle UID > Section')
+
+  const { courseId } = await inquirer.prompt({
+    name: 'courseId',
+    type: 'input',
+    message: 'Write a canvas sis_course_id',
+    default: 'LT1016VT191'
+  })
+
   const { sectionId } = await inquirer.prompt({
     name: 'sectionId',
     type: 'input',
     message: 'Write a canvas sis_section_id',
-    default: 'LT1016VT191'
+    default: courseId
   })
 
-  const section = (await canvas.get(`courses/sis_course_id:${sectionId}/sections/sis_section_id:${sectionId}`)).body
+  const section = (await canvas.get(`courses/sis_course_id:${courseId}/sections/sis_section_id:${sectionId}`)).body
 
   console.log('- Section and Course in Canvas is', section.name)
 
@@ -26,7 +34,7 @@ async function start () {
     default: section.integration_id || ''
   })
 
-  await canvas.requestUrl(`/courses/sis_course_id:${sectionId}`, 'PUT', {
+  await canvas.requestUrl(`/courses/sis_course_id:${courseId}`, 'PUT', {
     course: {
       integration_id: kurstillfalleUID
     }
@@ -41,7 +49,7 @@ async function start () {
   console.log('Ladok moment UID > Assignment')
 
   const assignments = []
-  for await (const assignment of canvas.list(`/courses/sis_course_id:${sectionId}/assignments`)) {
+  for await (const assignment of canvas.list(`/courses/sis_course_id:${courseId}/assignments`)) {
     assignments.push(assignment)
   }
 
@@ -63,7 +71,7 @@ async function start () {
     default: assignment.integration_id
   })
 
-  await canvas.requestUrl(`/courses/sis_course_id:${sectionId}/assignments/${assignment.id}`, 'PUT', {
+  await canvas.requestUrl(`/courses/sis_course_id:${courseId}/assignments/${assignment.id}`, 'PUT', {
     assignment: {
       integration_id: modulUID
     }
