@@ -34,31 +34,29 @@ async function chooseCourse () {
   return course
 }
 
+async function chooseSection (course) {
+  const sections = await canvas.list(`/courses/${course.id}/sections`).toArray()
+
+  const { section } = await inquirer.prompt({
+    name: 'section',
+    type: 'rawlist',
+    message: 'Choose a section',
+    choices: sections.map(s => ({
+      value: s,
+      name: `${s.sis_section_id} - ${s.name}`,
+      short: s.name
+    }))
+  })
+
+  return section
+}
+
 async function start () {
   console.log('This app will set up the Ladok data to a course.')
   console.log()
 
   const course = await chooseCourse()
-
-  console.log('Ladok kurstilfälle UID > Section')
-
-  const { courseId } = await inquirer.prompt({
-    name: 'courseId',
-    type: 'input',
-    message: 'Write a canvas sis_course_id',
-    default: 'LT1016VT191'
-  })
-
-  const { sectionId } = await inquirer.prompt({
-    name: 'sectionId',
-    type: 'input',
-    message: 'Write a canvas sis_section_id',
-    default: courseId
-  })
-
-  const section = (await canvas.get(`courses/sis_course_id:${courseId}/sections/sis_section_id:${sectionId}`)).body
-
-  console.log('- Section and Course in Canvas is', section.name)
+  const section = await chooseSection(course)
 
   const { kurstillfalleUID } = await inquirer.prompt({
     name: 'kurstillfalleUID',
