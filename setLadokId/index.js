@@ -27,7 +27,7 @@ async function chooseCourse () {
         course = null
       }
     } catch (e) {
-      console.error('X')
+      console.error(e)
     }
   }
 
@@ -184,6 +184,11 @@ async function start () {
 
       if (kthId) {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
+        
+        if(!user){
+          throw new Error(`No user found for ${kthId}`)
+        }
+
         const ladokId = user.ugLadok3StudentUid
         if (ladokId) {
           await setupUser(kthId, ladokId)
