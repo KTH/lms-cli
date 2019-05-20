@@ -1,23 +1,21 @@
 require('dotenv').config()
 const inquirer = require('inquirer')
-const rp = require('request-promise')
+const got = require('got')
 const chalk = require('chalk')
 
 async function getBuilds (app) {
   const auth = `Basic ${Buffer.from(process.env.BUILD_USERNAME + ':' + process.env.BUILD_TOKEN).toString('base64')}`
 
-  const { builds } = await rp({
+  const { builds } = (await got({
     url: `https://build.sys.kth.se/job/${app}/api/json?tree=builds[number,url]`,
-    method: 'GET',
     json: true,
     headers: {
       'Authorization': auth
     }
-  })
+  })).body
 
-  const buildsStatus = await Promise.all(builds.map(({ url }) => rp({
+  const buildsStatus = await Promise.all(builds.map(({ url }) => got({
     url: `${url}/api/json?`,
-    method: 'GET',
     json: true,
     headers: {
       'Authorization': auth
@@ -25,10 +23,10 @@ async function getBuilds (app) {
   })))
 
   return buildsStatus
-    .map(({ id, result, actions }) => ({
-      id,
-      result,
-      actions: actions
+    .map(({ body }) => ({
+      id: body.id,
+      result: body.result,
+      actions: body.actions
         .filter(a => a._class && a._class.includes('git'))
         .map(a => a.lastBuiltRevision || (a.build && a.build.revision))
         .filter(a => a)
@@ -43,8 +41,7 @@ async function getBuilds (app) {
 
 async function getVersion (url) {
   try {
-    const html = await rp({
-      method: 'GET',
+    const { body: html } = await got({
       followRedirect: false,
       url
     })
@@ -60,8 +57,7 @@ async function getVersion (url) {
 }
 
 async function getImageVersion (repo, commit) {
-  const content = await rp({
-    method: 'GET',
+  const { body: content } = await got({
     url: `https://raw.githubusercontent.com/${repo}/${commit}/docker.conf`
   })
 

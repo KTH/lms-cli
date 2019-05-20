@@ -184,8 +184,8 @@ async function start () {
 
       if (kthId) {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
-        
-        if(!user){
+
+        if (!user) {
           throw new Error(`No user found for ${kthId}`)
         }
 
