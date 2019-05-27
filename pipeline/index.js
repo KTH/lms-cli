@@ -14,19 +14,23 @@ async function getBuilds (app) {
     }
   })).body
 
-  const buildsStatus = await Promise.all(builds.map(({ url }) => got({
-    url: `${url}/api/json?`,
-    json: true,
-    headers: {
-      'Authorization': auth
-    }
-  })))
+  const getStatus = url =>
+    got({
+      url: `${url}/api/json?`,
+      json: true,
+      headers: {
+        'Authorization': auth
+      }
+    })
+    .then(response => response.body)
+
+  const buildsStatus = await Promise.all(builds.map(({ url }) => getStatus(url)))
 
   return buildsStatus
-    .map(({ body }) => ({
-      id: body.id,
-      result: body.result,
-      actions: body.actions
+    .map(({ id, result, actions }) => ({
+      id,
+      result,
+      actions: actions
         .filter(a => a._class && a._class.includes('git'))
         .map(a => a.lastBuiltRevision || (a.build && a.build.revision))
         .filter(a => a)
