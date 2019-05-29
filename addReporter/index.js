@@ -3,6 +3,7 @@ const fs = require('fs')
 
 const Ladok = require('@kth/ladok-api')
 const inquirer = require('inquirer')
+const chalk = require('chalk')
 
 async function addPermission (ladok, anvandareUID) {
   const { organisationUID } = await inquirer.prompt({
@@ -35,7 +36,8 @@ async function removePermission (ladok, rattighet) {
     }
   )
 
-  console.log('With this script, you can add "rapportör" rights ("rättigheter") to a user...')
+  console.log(`${chalk.yellow('Caution!')} You are running this script towards ${chalk.bold(await getEnv('LADOK_API_URL'))}`)
+  console.log()
   const { anvandareUID } = await inquirer.prompt({
     message: 'Write the Användare UID',
     name: 'anvandareUID',
