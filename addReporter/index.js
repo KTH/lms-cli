@@ -4,13 +4,19 @@ const fs = require('fs')
 const Ladok = require('@kth/ladok-api')
 const inquirer = require('inquirer')
 const chalk = require('chalk')
+const organisations = require('./organisations')
 
 async function addPermission (ladok, anvandareUID) {
-  const { organisationUID } = await inquirer.prompt({
-    message: 'Write the Organisation UID',
-    name: 'organisationUID',
-    type: 'input'
-  })
+
+	const SkapaOrganisationsrattighet = organisations.Organisationer.map(org => ([{
+		"AnvandareUID": anvandareUID,
+		"Informationsbehorighetsavgransningar": [],
+		"OrganisationUID": org.Uid,
+		"RattighetenAvser": "HEL_KURS_OCH_MODUL_RESULTAT"
+	}]))
+console.log(SkapaOrganisationsrattighet)
+
+	process.exit()
 
   await ladok.requestUrl('/resultat/resultatrattighet/organisation/rapportor', 'POST', {
     'SkapaOrganisationsrattighet': [{
