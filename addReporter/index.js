@@ -26,13 +26,13 @@ async function removePermission (ladok, rattighet) {
   await ladok.requestUrl(`/resultat/resultatrattighet/${rattighet.Uid}`, 'DELETE')
 }
 
-;(async function start () {
+async function start () {
   const ladok = Ladok(
-    await getEnv('LADOK_API_URL'),
+    await getEnv('LADOK_API_BASEURL'),
     {
-      pfx: fs.readFileSync('./certificate.pfx'),
-      // pfx: Buffer.from(await getEnv('LADOK_PFX_BASE64')),
-      passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
+      // pfx: fs.readFileSync('./certificate.pfx'),
+      pfx: Buffer.from(await getEnv('LADOK_API_PFX_BASE64'), 'base64'),
+      passphrase: '' //await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
     }
   )
 
@@ -74,4 +74,8 @@ async function removePermission (ladok, rattighet) {
       await removePermission(ladok, chosenOption)
     }
   }
-})()
+}
+
+start().catch(e => {
+  console.error(e)
+})
