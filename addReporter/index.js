@@ -8,23 +8,15 @@ const organisations = require('./organisations')
 
 async function addPermission (ladok, anvandareUID) {
 
-	const SkapaOrganisationsrattighet = organisations.Organisationer.map(org => ([{
+	const SkapaOrganisationsrattighet = organisations.Organisationer.map(org => ({
 		"AnvandareUID": anvandareUID,
 		"Informationsbehorighetsavgransningar": [],
 		"OrganisationUID": org.Uid,
 		"RattighetenAvser": "HEL_KURS_OCH_MODUL_RESULTAT"
-	}]))
-console.log(SkapaOrganisationsrattighet)
-
-	process.exit()
+	}))
 
   await ladok.requestUrl('/resultat/resultatrattighet/organisation/rapportor', 'POST', {
-    'SkapaOrganisationsrattighet': [{
-      "AnvandareUID": anvandareUID,
-      "Informationsbehorighetsavgransningar": [],
-      "OrganisationUID": organisationUID,
-      "RattighetenAvser": "HEL_KURS_OCH_MODUL_RESULTAT"
-    }]
+    SkapaOrganisationsrattighet 
   })
 }
 
