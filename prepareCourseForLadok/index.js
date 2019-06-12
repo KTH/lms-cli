@@ -158,15 +158,7 @@ async function start () {
   console.log()
 
   let course = await chooseCourse()
-  let section = await chooseSection(course)
 
-  course = await setupCourse(course)
-  section = await setupSection(course, section)
-
-  /** Assignments **/
-  // get the list of ladok modules from kopps
-  // for each:prompt for the ladok id
-  // create an assignment in canvas
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
@@ -199,6 +191,7 @@ async function start () {
     const body = {
       'assignment': {
         'name': examinationRound.title,
+        description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
         'muted': true,
         'submission_types': ['none'],
         'grading_type': 'letter_grade',
@@ -216,12 +209,6 @@ async function start () {
       await canvas.requestUrl(`courses/${course.id}/assignments/${assignment.id}`, 'PUT', body)
     }
   }
-
-  console.log(examinationRounds)
-  process.exit()
-
-  // let assignment = await chooseAssignment(course)
-  // await setupAssignment(assignment, course)
 
   const { setupUsers } = await inquirer.prompt({
     name: 'setupUsers',
