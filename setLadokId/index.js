@@ -2,7 +2,7 @@ require('dotenv').config()
 const inquirer = require('inquirer')
 const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN, { log: console.log })
 const ldap = require('../lib/ldap')
-
+const got = require('got')
 async function chooseCourse () {
   let course
 
@@ -163,8 +163,27 @@ async function start () {
   course = await setupCourse(course)
   section = await setupSection(course, section)
 
-  let assignment = await chooseAssignment(course)
-  await setupAssignment(assignment, course)
+  /** Assignments **/
+  // get the list of ladok modules from kopps
+  // for each:prompt for the ladok id
+  // create an assignment in canvas
+
+  const { body: courseDetails } = await got('https://api.kth.se/api/kopps/v2/course/lt1016/detailedinformation', { json: true })
+  const termUtils = {
+    'VT': 1,
+    'HT': 2,
+    1: 'VT',
+    2: 'HT'
+  }
+  const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
+  const termNumber = `20${year}${termUtils[term]}`
+  const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
+
+  console.log(examinationRounds)
+  process.exit()
+
+  // let assignment = await chooseAssignment(course)
+  // await setupAssignment(assignment, course)
 
   const { setupUsers } = await inquirer.prompt({
     name: 'setupUsers',
@@ -173,7 +192,7 @@ async function start () {
   })
 
   if (!setupUsers) {
-    return
+
   }
 
   try {
@@ -184,8 +203,7 @@ async function start () {
 
       if (kthId) {
         const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
-        
-        if(!user){
+        if (!user) {
           throw new Error(`No user found for ${kthId}`)
         }
 
