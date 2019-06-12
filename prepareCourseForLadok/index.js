@@ -177,7 +177,11 @@ async function start () {
     1: 'VT',
     2: 'HT'
   }
-  const gradingSchemaPF = 609
+
+  const gradingSchemas = {
+    'AF': 562,
+    'PF': 609
+  }
 
   const termNumber = `20${year}${termUtils[term]}`
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
@@ -185,27 +189,31 @@ async function start () {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
 
-    if (assignment) {
-      console.log(`The Canvas assignment "${assignment.name}" is linked with the Ladok module "${examinationRound.title}"`)
-    } else {
-	    const { modulId } = await inquirer.prompt({
-		    name: 'modulId',
-		    type: 'input',
-		    message: `Enter the ladok id for the module '${examinationRound.title}'`
-	    })
-      await canvas.requestUrl(`courses/${course.id}/assignments/`, 'POST', {
-        'assignment': {
-          'name': examinationRound.title,
-          'muted': true,
-          'submission_types': ['none'],
-          'grading_type': 'letter_grade',
-          'grading_standard_id': gradingSchemaPF,
-          integration_id: modulId,
-          integration_data: JSON.stringify({
-            sis_assignment_id: assignmentSisID
-          })
-        }
-      })
+    const { modulId } = await inquirer.prompt({
+		  name: 'modulId',
+		  type: 'input',
+		  message: `Enter the ladok id for the module '${examinationRound.title}'`,
+      default: assignment.integration_id
+	  })
+
+    const body = {
+      'assignment': {
+        'name': examinationRound.title,
+        'muted': true,
+        'submission_types': ['none'],
+        'grading_type': 'letter_grade',
+        'grading_standard_id': gradingSchemas[examinationRound.gradeScaleCode],
+        integration_id: modulId,
+        integration_data: JSON.stringify({
+          sis_assignment_id: assignmentSisID
+        })
+      }
+    }
+
+    if (!assignment) {
+      await canvas.requestUrl(`courses/${course.id}/assignments/`, 'POST', body)
+    } else if (modulId !== assignment.integration_id) {
+      await canvas.requestUrl(`courses/${course.id}/assignments/${assignment.id}`, 'PUT', body)
     }
   }
 
