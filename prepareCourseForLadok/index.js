@@ -167,6 +167,7 @@ async function start () {
   // get the list of ladok modules from kopps
   // for each:prompt for the ladok id
   // create an assignment in canvas
+  const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
   const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
@@ -181,12 +182,31 @@ async function start () {
   const termNumber = `20${year}${termUtils[term]}`
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
   for (examinationRound of examinationRounds) {
-	  const { modulId } = await inquirer.prompt({
-		  name: 'modulId',
-		  type: 'input',
-		  message: `Enter the ladok id for the module '${examinationRound.title}'`
-	  })
-    await canvas.requestUrl(`courses/${course.id}/assignments/`, 'POST', { 'assignment': { 'name': examinationRound.title, 'muted': true, 'submission_types': ['none'], 'grading_type': 'letter_grade', 'grading_standard_id': gradingSchemaPF, integration_id: modulId } })
+    const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
+    const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
+
+    if (assignment) {
+      console.log(`The Canvas assignment "${assignment.name}" is linked with the Ladok module "${examinationRound.title}"`)
+    } else {
+	    const { modulId } = await inquirer.prompt({
+		    name: 'modulId',
+		    type: 'input',
+		    message: `Enter the ladok id for the module '${examinationRound.title}'`
+	    })
+      await canvas.requestUrl(`courses/${course.id}/assignments/`, 'POST', {
+        'assignment': {
+          'name': examinationRound.title,
+          'muted': true,
+          'submission_types': ['none'],
+          'grading_type': 'letter_grade',
+          'grading_standard_id': gradingSchemaPF,
+          integration_id: modulId,
+          integration_data: JSON.stringify({
+            sis_assignment_id: assignmentSisID
+          })
+        }
+      })
+    }
   }
 
   console.log(examinationRounds)
