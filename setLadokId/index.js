@@ -176,8 +176,18 @@ async function start () {
     1: 'VT',
     2: 'HT'
   }
+  const gradingSchemaPF = 609
+
   const termNumber = `20${year}${termUtils[term]}`
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
+  for (examinationRound of examinationRounds) {
+	  const { modulId } = await inquirer.prompt({
+		  name: 'modulId',
+		  type: 'input',
+		  message: `Enter the ladok id for the module '${examinationRound.title}'`
+	  })
+    await canvas.requestUrl(`courses/${course.id}/assignments/`, 'POST', { 'assignment': { 'name': examinationRound.title, 'muted': true, 'submission_types': ['none'], 'grading_type': 'letter_grade', 'grading_standard_id': gradingSchemaPF, integration_id: modulId } })
+  }
 
   console.log(examinationRounds)
   process.exit()
