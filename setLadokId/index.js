@@ -168,14 +168,14 @@ async function start () {
   // for each:prompt for the ladok id
   // create an assignment in canvas
 
-  const { body: courseDetails } = await got('https://api.kth.se/api/kopps/v2/course/lt1016/detailedinformation', { json: true })
+  const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
+  const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
   const termUtils = {
     'VT': 1,
     'HT': 2,
     1: 'VT',
     2: 'HT'
   }
-  const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
   const termNumber = `20${year}${termUtils[term]}`
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
 
