@@ -185,16 +185,17 @@ async function start () {
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
+    const assignmentName = `LADOK - ${examinationRound.examCode}`
 
     const { modulId } = await inquirer.prompt({
       name: 'modulId',
       type: 'input',
-      message: `Enter the ladok id for the module '${examinationRound.title}'`,
+      message: `Enter the ladok id for the module '${assignmentName}'`,
       default: assignment && assignment.integration_id })
 
     const body = {
       assignment: {
-        name: examinationRound.title,
+        name: assignmentName,
         description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
         muted: true,
         submission_types: ['none'],
