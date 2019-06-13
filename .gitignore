@@ -2,3 +2,4 @@ node_modules
 *.pfx
 .env
 organisations.js
+.tern-port
