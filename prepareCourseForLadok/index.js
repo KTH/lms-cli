@@ -222,7 +222,7 @@ async function start () {
 
   try {
     await ldap.connect()
-
+    const section = await chooseSection(course)
     for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
       const kthId = enrollment.user.sis_user_id
 
