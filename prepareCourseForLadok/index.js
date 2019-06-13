@@ -177,16 +177,15 @@ async function start () {
 
   const termNumber = `20${year}${termUtils[term]}`
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
-  for (examinationRound of examinationRounds) {
+  for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
 
     const { modulId } = await inquirer.prompt({
-		  name: 'modulId',
-		  type: 'input',
-		  message: `Enter the ladok id for the module '${examinationRound.title}'`,
-      default: assignment.integration_id
-	  })
+      name: 'modulId',
+      type: 'input',
+      message: `Enter the ladok id for the module '${examinationRound.title}'`,
+      default: assignment.integration_id })
 
     const body = {
       'assignment': {

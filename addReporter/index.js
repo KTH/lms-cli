@@ -7,16 +7,15 @@ const chalk = require('chalk')
 const organisations = require('./organisations')
 
 async function addPermission (ladok, anvandareUID) {
-
-	const SkapaOrganisationsrattighet = organisations.Organisationer.map(org => ({
-		"AnvandareUID": anvandareUID,
-		"Informationsbehorighetsavgransningar": [],
-		"OrganisationUID": org.Uid,
-		"RattighetenAvser": "HEL_KURS_OCH_MODUL_RESULTAT"
-	}))
+  const SkapaOrganisationsrattighet = organisations.Organisationer.map(org => ({
+    'AnvandareUID': anvandareUID,
+    'Informationsbehorighetsavgransningar': [],
+    'OrganisationUID': org.Uid,
+    'RattighetenAvser': 'HEL_KURS_OCH_MODUL_RESULTAT'
+  }))
 
   await ladok.requestUrl('/resultat/resultatrattighet/organisation/rapportor', 'POST', {
-    SkapaOrganisationsrattighet 
+    SkapaOrganisationsrattighet
   })
 }
 
@@ -30,7 +29,7 @@ async function start () {
     {
       // pfx: fs.readFileSync('./certificate.pfx'),
       pfx: Buffer.from(await getEnv('LADOK_API_PFX_BASE64'), 'base64'),
-      passphrase: '' //await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
+      passphrase: '' // await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
     }
   )
 
@@ -63,7 +62,7 @@ async function start () {
       type: 'list',
       message: 'What do you want to do? (Ctrl-C to exit)',
       name: 'chosenOption',
-      choices: options,
+      choices: options
     })
 
     if (chosenOption === 'add') {
