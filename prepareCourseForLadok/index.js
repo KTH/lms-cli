@@ -175,7 +175,8 @@ async function start () {
     'PF': 609
   }
 
-  const termNumber = `20${year}${termUtils[term]}`
+  // const termNumber = `20${year}${termUtils[term]}`
+  const termNumber = '20111'
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
@@ -185,7 +186,7 @@ async function start () {
       name: 'modulId',
       type: 'input',
       message: `Enter the ladok id for the module '${examinationRound.title}'`,
-      default: assignment.integration_id })
+      default: assignment && assignment.integration_id })
 
     const body = {
       'assignment': {
