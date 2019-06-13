@@ -175,9 +175,13 @@ async function start () {
     'PF': 609
   }
 
-  // const termNumber = `20${year}${termUtils[term]}`
-  const termNumber = '20111'
-  const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
+  const termNumber = `20${year}${termUtils[term]}`
+  const examinationSets = Object.values(courseDetails.examinationSets)
+        .sort((a, b) => parseInt(a.startingTerm.term, 10) - parseInt(b.startingTerm.term, 10))
+        .filter(e => parseInt(e.startingTerm.term, 10) <= termNumber)
+
+  const examinationRounds = examinationSets[examinationSets.length - 1].examinationRounds
+
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
