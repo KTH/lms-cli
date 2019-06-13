@@ -193,13 +193,13 @@ async function start () {
       default: assignment && assignment.integration_id })
 
     const body = {
-      'assignment': {
-        'name': examinationRound.title,
+      assignment: {
+        name: examinationRound.title,
         description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
-        'muted': true,
-        'submission_types': ['none'],
-        'grading_type': 'letter_grade',
-        'grading_standard_id': gradingSchemas[examinationRound.gradeScaleCode],
+        muted: true,
+        submission_types: ['none'],
+        grading_type: 'letter_grade',
+        grading_standard_id: gradingSchemas[examinationRound.gradeScaleCode],
         integration_id: modulId,
         integration_data: JSON.stringify({
           sis_assignment_id: assignmentSisID
