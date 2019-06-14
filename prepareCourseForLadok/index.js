@@ -1,54 +1,26 @@
 require('dotenv').config()
 const inquirer = require('inquirer')
-const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN, { log: console.log })
+const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN)
 const ldap = require('../lib/ldap')
 const got = require('got')
 
 async function createButton (course) {
-  const tools = (await canvas.get('accounts/1/external_tools?per_page=100'))
-    .body
-    .map(tool => ({
-      short: tool.id,
-      name: `ID: ${tool.id}. NAME: ${tool.name}. URL: ${tool.url}`,
-      value: tool.id
-    }))
-
-  tools.unshift(new inquirer.Separator())
-  tools.unshift({
-    short: 'new',
-    name: 'Create a new button',
-    value: 'new'
+  const { createButton } = await inquirer.prompt({
+    type: 'confirm',
+    name: 'createButton',
+    message: 'Do you want to create a link in the menu?'
   })
+  if (!createButton) {
+    return
+  }
+  const buttonName = 'Exportera betygsunderlag till Ladok (BETA)'
 
-  tools.unshift({
-    short: 'skip',
-    name: 'Skip',
-    value: 'skip'
-  })
-
-  const { buttonId } = await inquirer.prompt({
-    type: 'list',
-    name: 'buttonId',
-    message: 'Replace an existing button or create a new one?',
-    choices: tools
-  })
-
-  const { buttonUrl } = await inquirer.prompt({
-    type: 'list',
-    name: 'buttonUrl',
-    message: 'Where is the app deployed?',
-    choices: [
-      'http://localhost:3001/api/lms-export-to-ladok/export',
-      'https://api-r.referens.sys.kth.se/api/lms-export-to-ladok/export',
-      'https://api.kth.se/api/lms-export-to-ladok/export'
-    ]
-  })
-
-  const { buttonName } = await inquirer.prompt({
-    name: 'buttonName',
-    message: 'Choose a name for the button',
-    default: 'Exportera betygsunderlag till Ladok (BETA)'
-  })
+  let buttonUrl
+  if (process.env.CANVAS_API_URL === 'https://kth.instructure.com/api/v1') {
+    buttonUrl = 'https://api.kth.se/api/lms-export-to-ladok/export'
+  } else if (process.env.CANVAS_API_URL === 'https://kth.test.instructure.com/api/v1') {
+    buttonUrl = 'https://api-r.referens.sys.kth.se/api/lms-export-to-ladok/export'
+  }
 
   const body = {
     name: buttonName,
@@ -67,13 +39,8 @@ async function createButton (course) {
       enabled: true
     }
   }
-  if (buttonId === 'new') {
-    const newButton = await canvas.requestUrl(`/courses/${course.id}/external_tools`, 'POST', body)
-
-    console.log(`New button created with ID: ${newButton.body.id}`)
-  } else {
-    return canvas.requestUrl(`/accounts/1/external_tools/${buttonId}`, 'PUT', body)
-  }
+  const newButton = await canvas.requestUrl(`/courses/${course.id}/external_tools`, 'POST', body)
+  console.log(`New button created with ID: ${newButton.body.id}`)
 }
 
 async function chooseCourse () {
@@ -319,6 +286,9 @@ async function start () {
     } catch (e) {
       console.log('Error:', e)
     }
+  } else {
+    console.log('Done')
+    return Promise.resolve()
   }
 }
 
