@@ -287,8 +287,8 @@ async function start () {
       console.log('Error:', e)
     }
   } else {
-    console.log('Done')
-    return Promise.resolve()
+    console.log('Done. TODO: why dont this script terminate here?')
+    process.exit()
   }
 }
 
