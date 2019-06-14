@@ -3,6 +3,79 @@ const inquirer = require('inquirer')
 const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN, { log: console.log })
 const ldap = require('../lib/ldap')
 const got = require('got')
+
+async function createButton (course) {
+  const tools = (await canvas.get('accounts/1/external_tools?per_page=100'))
+    .body
+    .map(tool => ({
+      short: tool.id,
+      name: `ID: ${tool.id}. NAME: ${tool.name}. URL: ${tool.url}`,
+      value: tool.id
+    }))
+
+  tools.unshift(new inquirer.Separator())
+  tools.unshift({
+    short: 'new',
+    name: 'Create a new button',
+    value: 'new'
+  })
+
+  tools.unshift({
+    short: 'skip',
+    name: 'Skip',
+    value: 'skip'
+  })
+
+  const { buttonId } = await inquirer.prompt({
+    type: 'list',
+    name: 'buttonId',
+    message: 'Replace an existing button or create a new one?',
+    choices: tools
+  })
+
+  const { buttonUrl } = await inquirer.prompt({
+    type: 'list',
+    name: 'buttonUrl',
+    message: 'Where is the app deployed?',
+    choices: [
+      'http://localhost:3001/api/lms-export-to-ladok/export',
+      'https://api-r.referens.sys.kth.se/api/lms-export-to-ladok/export',
+      'https://api.kth.se/api/lms-export-to-ladok/export'
+    ]
+  })
+
+  const { buttonName } = await inquirer.prompt({
+    name: 'buttonName',
+    message: 'Choose a name for the button',
+    default: 'Exportera betygsunderlag till Ladok (BETA)'
+  })
+
+  const body = {
+    name: buttonName,
+    consumer_key: 'not_used',
+    shared_secret: 'not_used',
+    url: buttonUrl,
+    privacy_level: 'public',
+    course_navigation: {
+      visibility: 'admins',
+      windowTarget: '_self',
+      text: buttonName,
+      default: false,
+      enabled: true
+    },
+    editor_button: {
+      enabled: true
+    }
+  }
+  if (buttonId === 'new') {
+    const newButton = await canvas.requestUrl(`/courses/${course.id}/external_tools`, 'POST', body)
+
+    console.log(`New button created with ID: ${newButton.body.id}`)
+  } else {
+    return canvas.requestUrl(`/accounts/1/external_tools/${buttonId}`, 'PUT', body)
+  }
+}
+
 async function chooseCourse () {
   let course
 
@@ -158,7 +231,7 @@ async function start () {
   console.log()
 
   let course = await chooseCourse()
-
+  await createButton(course)
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
@@ -175,8 +248,8 @@ async function start () {
     'PF': 609
   }
 
-  // const termNumber = `20${year}${termUtils[term]}`
-  const termNumber = '20111'
+  const termNumber = `20${year}${termUtils[term]}`
+  // const termNumber = '20111'
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
@@ -185,12 +258,12 @@ async function start () {
     const { modulId } = await inquirer.prompt({
       name: 'modulId',
       type: 'input',
-      message: `Enter the ladok id for the module '${examinationRound.title}'`,
+      message: `Enter the ladok id for the module '${examinationRound.examCode} ${examinationRound.title}'`,
       default: assignment && assignment.integration_id })
 
     const body = {
       'assignment': {
-        'name': examinationRound.title,
+        'name': `LADOK - ${examinationRound.examCode} (${examinationRound.title})`,
         description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
         'muted': true,
         'submission_types': ['none'],
