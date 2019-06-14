@@ -1,7 +1,6 @@
 require('dotenv').config()
 const inquirer = require('inquirer')
 const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN)
-const ldap = require('../lib/ldap')
 const got = require('got')
 
 async function createButton (course) {
@@ -216,7 +215,6 @@ async function start () {
   }
 
   const termNumber = `20${year}${termUtils[term]}`
-  // const termNumber = '20111'
   const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
@@ -257,6 +255,7 @@ async function start () {
   })
 
   if (setupUsers) {
+    const ldap = require('../lib/ldap')
     try {
       await ldap.connect()
       const section = await chooseSection(course)
@@ -286,9 +285,6 @@ async function start () {
     } catch (e) {
       console.log('Error:', e)
     }
-  } else {
-    console.log('Done. TODO: why dont this script terminate here?')
-    process.exit()
   }
 }
 
