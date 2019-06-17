@@ -215,10 +215,16 @@ async function start () {
   }
 
   const termNumber = `20${year}${termUtils[term]}`
-  const examinationRounds = courseDetails.examinationSets[termNumber].examinationRounds
+  const examinationSets = Object.values(courseDetails.examinationSets)
+    .sort((a, b) => parseInt(a.startingTerm.term, 10) - parseInt(b.startingTerm.term, 10))
+    .filter(e => parseInt(e.startingTerm.term, 10) <= termNumber)
+
+  const examinationRounds = examinationSets[examinationSets.length - 1].examinationRounds
+
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
+    const assignmentName = `LADOK - ${examinationRound.examCode}`
 
     const { modulId } = await inquirer.prompt({
       name: 'modulId',
@@ -227,13 +233,13 @@ async function start () {
       default: assignment && assignment.integration_id })
 
     const body = {
-      'assignment': {
-        'name': `LADOK - ${examinationRound.examCode} (${examinationRound.title})`,
+      assignment: {
+        name: `LADOK - ${examinationRound.examCode} (${examinationRound.title})`,
         description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
-        'muted': true,
-        'submission_types': ['none'],
-        'grading_type': 'letter_grade',
-        'grading_standard_id': gradingSchemas[examinationRound.gradeScaleCode],
+        muted: true,
+        submission_types: ['none'],
+        grading_type: 'letter_grade',
+        grading_standard_id: gradingSchemas[examinationRound.gradeScaleCode],
         integration_id: modulId,
         integration_data: JSON.stringify({
           sis_assignment_id: assignmentSisID
