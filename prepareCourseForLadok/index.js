@@ -35,7 +35,7 @@ async function createButton (course) {
       enabled: true
     },
     editor_button: {
-      enabled: true
+      enabled: false
     }
   }
   const newButton = await canvas.requestUrl(`/courses/${course.id}/external_tools`, 'POST', body)
@@ -193,7 +193,7 @@ async function setupUser (kthId, ladokId) {
 }
 
 async function start () {
-  console.log('This app will set up the Ladok data to a course.')
+  console.log(`This app will set up the Ladok data to a course in ${process.env.CANVAS_API_URL}.`)
   console.log()
 
   let course = await chooseCourse()
