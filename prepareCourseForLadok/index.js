@@ -1,8 +1,47 @@
 require('dotenv').config()
 const inquirer = require('inquirer')
-const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN, { log: console.log })
-const ldap = require('../lib/ldap')
+const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN)
 const got = require('got')
+
+async function createButton (course) {
+  const { createButton } = await inquirer.prompt({
+    type: 'confirm',
+    name: 'createButton',
+    message: 'Do you want to create a link in the menu?'
+  })
+  if (!createButton) {
+    return
+  }
+  const buttonName = 'Exportera betygsunderlag till Ladok (BETA)'
+
+  let buttonUrl
+  if (process.env.CANVAS_API_URL === 'https://kth.instructure.com/api/v1') {
+    buttonUrl = 'https://api.kth.se/api/lms-export-to-ladok/export'
+  } else if (process.env.CANVAS_API_URL === 'https://kth.test.instructure.com/api/v1') {
+    buttonUrl = 'https://api-r.referens.sys.kth.se/api/lms-export-to-ladok/export'
+  }
+
+  const body = {
+    name: buttonName,
+    consumer_key: 'not_used',
+    shared_secret: 'not_used',
+    url: buttonUrl,
+    privacy_level: 'public',
+    course_navigation: {
+      visibility: 'admins',
+      windowTarget: '_self',
+      text: buttonName,
+      default: false,
+      enabled: true
+    },
+    editor_button: {
+      enabled: true
+    }
+  }
+  const newButton = await canvas.requestUrl(`/courses/${course.id}/external_tools`, 'POST', body)
+  console.log(`New button created with ID: ${newButton.body.id}`)
+}
+
 async function chooseCourse () {
   let course
 
@@ -158,7 +197,7 @@ async function start () {
   console.log()
 
   let course = await chooseCourse()
-
+  await createButton(course)
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
@@ -190,12 +229,12 @@ async function start () {
     const { modulId } = await inquirer.prompt({
       name: 'modulId',
       type: 'input',
-      message: `Enter the ladok id for the module '${assignmentName}'`,
+      message: `Enter the ladok id for the module '${examinationRound.examCode} ${examinationRound.title}'`,
       default: assignment && assignment.integration_id })
 
     const body = {
       assignment: {
-        name: assignmentName,
+        name: `LADOK - ${examinationRound.examCode} (${examinationRound.title})`,
         description: `Denna uppgift motsvarar Ladokmodul <strong>"${examinationRound.title}" (${examinationRound.examCode})</strong>.<br>Betygsunderlag i denna uppgift skickas till Ladok.`,
         muted: true,
         submission_types: ['none'],
@@ -221,38 +260,37 @@ async function start () {
     message: 'Do you want to set the Ladok ID to all the users in the section?'
   })
 
-  if (!setupUsers) {
+  if (setupUsers) {
+    const ldap = require('../lib/ldap')
+    try {
+      await ldap.connect()
+      const section = await chooseSection(course)
+      for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
+        const kthId = enrollment.user.sis_user_id
 
-  }
+        if (kthId) {
+          const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
+          if (!user) {
+            throw new Error(`No user found for ${kthId}`)
+          }
 
-  try {
-    await ldap.connect()
-    const section = await chooseSection(course)
-    for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
-      const kthId = enrollment.user.sis_user_id
-
-      if (kthId) {
-        const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
-        if (!user) {
-          throw new Error(`No user found for ${kthId}`)
-        }
-
-        const ladokId = user.ugLadok3StudentUid
-        if (ladokId) {
-          await setupUser(kthId, ladokId)
-        } else {
-          console.error('No ladok id found for the user ', user)
-          process.exit()
+          const ladokId = user.ugLadok3StudentUid
+          if (ladokId) {
+            await setupUser(kthId, ladokId)
+          } else {
+            console.error('No ladok id found for the user ', user)
+            process.exit()
+          }
         }
       }
+    } catch (e) {
+      console.log('Error:', e)
     }
-  } catch (e) {
-    console.log('Error:', e)
-  }
-  try {
-    await ldap.disconnect()
-  } catch (e) {
-    console.log('Error:', e)
+    try {
+      await ldap.disconnect()
+    } catch (e) {
+      console.log('Error:', e)
+    }
   }
 }
 
