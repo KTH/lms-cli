@@ -201,7 +201,9 @@ async function start () {
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
-  const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
+  const { body: courseDetails } = await got(`http://kopps-r.referens.sys.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
+
+  // const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
   const termUtils = {
     'VT': 1,
     'HT': 2,
@@ -226,11 +228,7 @@ async function start () {
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
     const assignmentName = `LADOK - ${examinationRound.examCode}`
 
-    const { modulId } = await inquirer.prompt({
-      name: 'modulId',
-      type: 'input',
-      message: `Enter the ladok id for the module '${examinationRound.examCode} ${examinationRound.title}'`,
-      default: assignment && assignment.integration_id })
+    const modulId = examinationRound.ladokUID
 
     const body = {
       assignment: {
@@ -240,7 +238,8 @@ async function start () {
         submission_types: ['none'],
         grading_type: 'letter_grade',
         grading_standard_id: gradingSchemas[examinationRound.gradeScaleCode],
-        integration_id: modulId,
+        integration_id: examinationRound.ladokUID
+,
         integration_data: JSON.stringify({
           sis_assignment_id: assignmentSisID
         })
