@@ -279,7 +279,6 @@ async function start () {
             await setupUser(kthId, ladokId)
           } else {
             console.error('No ladok id found for the user ', user)
-            process.exit()
           }
         }
       }
