@@ -145,7 +145,7 @@ async function start () {
     .filter(e => parseInt(e.startingTerm.term, 10) <= termNumber)
 
   const examinationRounds = examinationSets[examinationSets.length - 1].examinationRounds
-
+  console.log('examinationRounds in Ladok: ', examinationRounds)
   for (const examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
