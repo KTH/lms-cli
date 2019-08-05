@@ -103,8 +103,8 @@ async function setupUser (kthId, ladokId) {
   for await (const login of canvas.list(`/users/sis_user_id:${kthId}/logins`)) {
     if (login.sis_user_id === kthId) {
       const body = {
-        'login': {
-          'integration_id': ladokId
+        login: {
+          integration_id: ladokId
         }
       }
       await canvas.requestUrl(`/accounts/${login.account_id}/logins/${login.id}`, 'PUT', body)
@@ -120,24 +120,23 @@ async function start () {
   console.log(`This app will set up the Ladok data to a course in ${process.env.CANVAS_API_URL}.`)
   console.log()
 
-  let course = await chooseCourse()
+  const course = await chooseCourse()
   await createButton(course)
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
-  const { body: courseDetails } = await got(`http://kopps-r.referens.sys.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
 
-  // const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
+  const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
   const termUtils = {
-    'VT': 1,
-    'HT': 2,
+    VT: 1,
+    HT: 2,
     1: 'VT',
     2: 'HT'
   }
 
   const gradingSchemas = {
-    'AF': 562,
-    'PF': 609
+    AF: 562,
+    PF: 609
   }
 
   const termNumber = `20${year}${termUtils[term]}`
@@ -147,7 +146,7 @@ async function start () {
 
   const examinationRounds = examinationSets[examinationSets.length - 1].examinationRounds
 
-  for (let examinationRound of examinationRounds) {
+  for (const examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
 
