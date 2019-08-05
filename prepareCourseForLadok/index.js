@@ -124,7 +124,7 @@ async function start () {
   await createButton(course)
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
-  const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
+  const [, courseCode, term, year] = course.sis_course_id.match(/(.*)(VT|HT)(\d{2})\d/)
 
   const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
   const termUtils = {
