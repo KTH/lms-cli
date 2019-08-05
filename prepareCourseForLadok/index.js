@@ -92,82 +92,6 @@ async function chooseSection (course) {
   return section
 }
 
-async function chooseAssignment (course) {
-  const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
-
-  const { assignment } = await inquirer.prompt({
-    name: 'assignment',
-    type: 'list',
-    message: 'Choose an assignment',
-    choices: assignments
-      .map(a => ({
-        value: a,
-        name: a.name,
-        short: a.id
-      }))
-      .concat(new inquirer.Separator())
-  })
-
-  return assignment
-}
-
-async function setupCourse (course) {
-  const { newId } = await inquirer.prompt({
-    name: 'newId',
-    type: 'input',
-    message: 'Write the Ladok Kurstillfälle UID for this course',
-    default: course.integration_id
-  })
-
-  if (newId !== course.integration_id) {
-    course = (await canvas.requestUrl(`/courses/${course.id}`, 'PUT', {
-      course: {
-        integration_id: newId
-      }
-    })).body
-  }
-
-  return course
-}
-
-async function setupSection (course, section) {
-  const { newId } = await inquirer.prompt({
-    name: 'newId',
-    type: 'input',
-    message: 'Write the Ladok Kurstillfälle UID for this section',
-    default: section.integration_id || course.integration_id
-  })
-
-  if (newId !== section.integration_id) {
-    section = (await canvas.requestUrl(`/sections/${section.id}`, 'PUT', {
-      course_section: {
-        integration_id: newId
-      }
-    })).body
-  }
-
-  return section
-}
-
-async function setupAssignment (assignment, course) {
-  const { newId } = await inquirer.prompt({
-    name: 'newId',
-    type: 'input',
-    message: 'Write the Ladok Modul UID or Moment UID for that assignment',
-    default: assignment.integration_id
-  })
-
-  if (newId !== assignment.integration_id) {
-    assignment = (await canvas.requestUrl(`/courses/${course.id}/assignments/${assignment.id}`, 'PUT', {
-      assignment: {
-        integration_id: newId
-      }
-    })).body
-  }
-
-  return assignment
-}
-
 /**
  * Update canvas integration_id of a user specified by kthid.
  *
@@ -201,7 +125,9 @@ async function start () {
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
   const [, courseCode, term, year] = course.sis_course_id.match(/(\w{2}\d{4})(VT|HT)(\d{2})\d/)
-  const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
+  const { body: courseDetails } = await got(`http://kopps-r.referens.sys.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
+
+  // const { body: courseDetails } = await got(`https://api.kth.se/api/kopps/v2/course/${courseCode}/detailedinformation`, { json: true })
   const termUtils = {
     'VT': 1,
     'HT': 2,
@@ -224,13 +150,8 @@ async function start () {
   for (let examinationRound of examinationRounds) {
     const assignmentSisID = `${course.sis_course_id}_${examinationRound.examCode}`
     const assignment = assignments.find(a => a.integration_data.sis_assignment_id === assignmentSisID)
-    const assignmentName = `LADOK - ${examinationRound.examCode}`
 
-    const { modulId } = await inquirer.prompt({
-      name: 'modulId',
-      type: 'input',
-      message: `Enter the ladok id for the module '${examinationRound.examCode} ${examinationRound.title}'`,
-      default: assignment && assignment.integration_id })
+    const modulId = examinationRound.ladokUID
 
     const body = {
       assignment: {

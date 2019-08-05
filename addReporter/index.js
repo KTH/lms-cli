@@ -1,5 +1,4 @@
 const { getEnv } = require('../lib/env')
-const fs = require('fs')
 
 const Ladok = require('@kth/ladok-api')
 const inquirer = require('inquirer')
