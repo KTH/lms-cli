@@ -12,7 +12,7 @@ async function createButton (course) {
   if (!createButton) {
     return
   }
-  const buttonName = 'Exportera betygsunderlag till Ladok (BETA)'
+  const buttonName = 'KTH - Export to Ladok (BETA)'
 
   let buttonUrl
   if (process.env.CANVAS_API_URL === 'https://kth.instructure.com/api/v1') {
