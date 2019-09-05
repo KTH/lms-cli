@@ -159,6 +159,7 @@ async function start () {
         muted: true,
         submission_types: ['none'],
         grading_type: 'letter_grade',
+        points_possible: 10,
         grading_standard_id: gradingSchemas[examinationRound.gradeScaleCode],
         integration_id: modulId,
         integration_data: JSON.stringify({
