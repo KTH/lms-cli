@@ -175,12 +175,12 @@ async function start () {
     }
   }
 
-  const { setupUsers } = await inquirer.prompt({
+  /* const { setupUsers } = await inquirer.prompt({
     name: 'setupUsers',
     type: 'confirm',
     message: 'Do you want to set the Ladok ID to all the users in the section?'
-  })
-
+  }) */
+  const setupUsers = false
   if (setupUsers) {
     const ldap = require('../lib/ldap')
     try {
