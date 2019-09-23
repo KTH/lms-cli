@@ -28,16 +28,20 @@ async function start () {
     {
       // pfx: fs.readFileSync('./certificate.pfx'),
       pfx: Buffer.from(await getEnv('LADOK_API_PFX_BASE64'), 'base64'),
-      passphrase: '' // await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
+      passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
     }
   )
 
   console.log(`${chalk.yellow('Caution!')} You are running this script towards ${chalk.bold(await getEnv('LADOK_API_BASEURL'))}`)
-  console.log()
+
+  const result = await ladok.test()
+
+  console.log(result.body.Uid)
   const { anvandareUID } = await inquirer.prompt({
     message: 'Write the Användare UID',
     name: 'anvandareUID',
-    type: 'input'
+    type: 'input',
+    default: result.body.Uid
   })
 
   while (true) {
