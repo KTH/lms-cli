@@ -35,7 +35,7 @@ async function start () {
   console.log(`${chalk.yellow('Caution!')} You are running this script towards ${chalk.bold(await getEnv('LADOK_API_BASEURL'))}`)
   console.log()
   const { anvandareUID } = await inquirer.prompt({
-    message: 'Write the Användare UID',
+    message: 'Write the Användare UID. This is the user you want to add behörigheter to (systemanvändaren)',
     name: 'anvandareUID',
     type: 'input'
   })
