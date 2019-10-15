@@ -121,43 +121,6 @@ async function start () {
   console.log()
 
   const course = await chooseCourse()
-  const { setupUsers } = await inquirer.prompt({
-    name: 'setupUsers',
-    type: 'confirm',
-    message: 'Do you want to set the Ladok ID to all the users in the section?'
-  })
-
-  if (setupUsers) {
-    const ldap = require('../lib/ldap')
-    try {
-      await ldap.connect()
-      const section = await chooseSection(course)
-      for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
-        const kthId = enrollment.user.sis_user_id
-
-        if (kthId) {
-          const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
-          if (!user) {
-            throw new Error(`No user found for ${kthId}`)
-          }
-
-          const ladokId = user.ugLadok3StudentUid
-          if (ladokId) {
-            await setupUser(kthId, ladokId)
-          } else {
-            console.error('No ladok id found for the user ', user)
-          }
-        }
-      }
-    } catch (e) {
-      console.log('Error:', e)
-    }
-    try {
-      await ldap.disconnect()
-    } catch (e) {
-      console.log('Error:', e)
-    }
-  }
   await createButton(course)
   const assignments = await canvas.list(`/courses/${course.id}/assignments`).toArray()
 
@@ -212,7 +175,43 @@ async function start () {
     }
   }
 
-  
+  const { setupUsers } = await inquirer.prompt({
+    name: 'setupUsers',
+    type: 'confirm',
+    message: 'Do you want to set the Ladok ID to all the users in the section?'
+  })
+
+  if (setupUsers) {
+    const ldap = require('../lib/ldap')
+    try {
+      await ldap.connect()
+      const section = await chooseSection(course)
+      for await (const enrollment of canvas.list(`sections/${section.id}/enrollments`, { type: 'StudentEnrollment' })) {
+        const kthId = enrollment.user.sis_user_id
+
+        if (kthId) {
+          const [user] = await ldap.search(`(ugKthId=${kthId})`, ['ugLadok3StudentUid'])
+          if (!user) {
+            throw new Error(`No user found for ${kthId}`)
+          }
+
+          const ladokId = user.ugLadok3StudentUid
+          if (ladokId) {
+            await setupUser(kthId, ladokId)
+          } else {
+            console.error('No ladok id found for the user ', user)
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Error:', e)
+    }
+    try {
+      await ldap.disconnect()
+    } catch (e) {
+      console.log('Error:', e)
+    }
+  }
 }
 
 start().catch(e => console.error(e))
