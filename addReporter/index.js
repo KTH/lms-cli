@@ -38,7 +38,7 @@ async function start () {
 
   console.log(result.body.Uid)
   const { anvandareUID } = await inquirer.prompt({
-    message: 'Write the Användare UID',
+    message: 'Write the Användare UID. This is the user you want to add behörigheter to (systemanvändaren)',
     name: 'anvandareUID',
     type: 'input',
     default: result.body.Uid
