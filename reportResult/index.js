@@ -1,7 +1,7 @@
 const { getEnv } = require('../lib/env')
 const path = require('path')
 const fs = require('fs')
-const rp = require('request-promise')
+const got = require('got')
 const inquirer = require('inquirer')
 
 async function helloLadok () {
@@ -9,12 +9,10 @@ async function helloLadok () {
 
   console.log('Trying to say hello to Ladok...')
 
-  await rp({
+  await got({
     url: 'https://api.test.ladok.se/kataloginformation/anvandare/autentiserad',
-    agentOptions: {
-      passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE'),
-      pfx
-    }
+    pfx,
+    passphrase: await getEnv('LADOK_CERTIFICATE_PASSPHRASE')
   })
 
   console.log('Successful!')
