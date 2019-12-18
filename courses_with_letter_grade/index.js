@@ -32,7 +32,8 @@ async function get() {
             "Found one for course:",
             course.sis_course_id,
             count,
-            totalHT19
+            totalHT19,
+            `https://kth.test.instructure.com/courses/${course.id}/assignments/${assignment.id}/`
           );
           break; // NOTE: to count assignments per grading, remove this break to count all assignments with letter grade, not just one per course room
         }
