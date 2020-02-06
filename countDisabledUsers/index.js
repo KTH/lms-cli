@@ -6,7 +6,7 @@ const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.en
 let totalUsersChecked = 0
 let disabledUsers = 0
 let usersWithEnrollments = 0
-
+let nonRappStudentEnrollments = 0
 async function doIt(){
     const ldap = require('../lib/ldap')
       await ldap.connect()
@@ -26,9 +26,14 @@ async function doIt(){
               usersWithEnrollments++
               console.log('User has enrollments'.redBG) 
             }
+
+            if(enrollments.find(it => it.sis_course_id && !it.sis_course_id.startsWith('RAPP_') && it.role === 'StudentEnrollment')){
+             nonRappStudentEnrollments++ 
+            }
+
             console.log(`enrollments for user ${kthId}:`, enrollments)
           }
-          console.log(`${Math.round(disabledUsers/totalUsersChecked*100000)/1000}% of ${totalUsersChecked} users are disabled (${disabledUsers}) where ${usersWithEnrollments} has some enrollments`.green)
+          console.log(`${Math.round(disabledUsers/totalUsersChecked*100000)/1000}% ${disabledUsers} of ${totalUsersChecked} users are disabled where ${usersWithEnrollments} has some enrollments, and ${nonRappStudentEnrollments} are enrolled in a non Rapp course round`.green)
         //   console.log(ldapUser)
         //   process.exit()
         }
