@@ -22,7 +22,8 @@ async function doIt(){
 
           }
           // console.log(ldapUser)
-          console.log(`${disabledUsers/totalUsersChecked*100}% of ${totalUsersChecked} users are disabled`)
+
+          console.log(`${Math.round(disabledUsers/totalUsersChecked*100000)/1000}% of ${totalUsersChecked} users are disabled (${disabledUsers})`)
         }
       }
     } catch (e) {
