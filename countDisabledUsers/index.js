@@ -1,8 +1,12 @@
 require('dotenv').config()
 require('colors')
+
 const canvas = require('@kth/canvas-api')(process.env.CANVAS_API_URL, process.env.CANVAS_API_TOKEN)
+
 let totalUsersChecked = 0
 let disabledUsers = 0
+let usersWithEnrollments = 0
+
 async function doIt(){
     const ldap = require('../lib/ldap')
       await ldap.connect()
@@ -19,11 +23,14 @@ async function doIt(){
             // list enrollments
             const {body:enrollments}= await canvas.get(`/users/sis_user_id:${kthId}/enrollments`)
             if(enrollments.length){
+              usersWithEnrollments++
               console.log('User has enrollments'.redBG) 
             }
             console.log(`enrollments for user ${kthId}:`, enrollments)
           }
-          console.log(`${Math.round(disabledUsers/totalUsersChecked*100000)/1000}% of ${totalUsersChecked} users are disabled (${disabledUsers})`.green)
+          console.log(`${Math.round(disabledUsers/totalUsersChecked*100000)/1000}% of ${totalUsersChecked} users are disabled (${disabledUsers}) where ${usersWithEnrollments} has some enrollments`.green)
+        //   console.log(ldapUser)
+        //   process.exit()
         }
       }
     try {
